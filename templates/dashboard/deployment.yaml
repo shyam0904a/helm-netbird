@@ -35,9 +35,9 @@ spec:
               protocol: TCP
           env:
             - name: NETBIRD_MGMT_API_ENDPOINT
-              value: "https://{{ required "global.domain.global must be set" (.Values.global.domain.management | default .Values.global.domain.global) }}:443"
+              value: "https://{{ .Values.global.domain.global }}:443"
             - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
-              value: "https://{{ .Values.global.domain.management | default .Values.global.domain.global }}:443"
+              value: "https://{{ .Values.global.domain.global }}:443"
             - name: AUTH_AUDIENCE
               value: "netbird-dashboard"
             - name: AUTH_CLIENT_ID
@@ -45,7 +45,7 @@ spec:
             - name: AUTH_CLIENT_SECRET
               value: ""
             - name: AUTH_AUTHORITY
-              value: "https://{{ .Values.global.domain.management | default .Values.global.domain.global }}/oauth2"
+              value: "https://{{ .Values.global.domain.global }}/oauth2"
             - name: USE_AUTH0
               value: 'false'
             - name: AUTH_SUPPORTED_SCOPES
@@ -56,6 +56,8 @@ spec:
               value: "/nb-silent-auth"
             - name: NGINX_SSL_PORT
               value: "443"
+            - name: LETSENCRYPT_DOMAIN
+              value: "none"
           livenessProbe:
             {{- if .Values.dashboard.livenessProbe }}
             {{- toYaml .Values.dashboard.livenessProbe | nindent 12 }}
@@ -64,7 +66,7 @@ spec:
                 path: /
                 port: http
               initialDelaySeconds: 15
-              periodSeconds: 30
+              periodSeconds: 60
             {{- end }}
           readinessProbe:
             {{- if .Values.dashboard.readinessProbe }}
@@ -74,7 +76,7 @@ spec:
                 path: /
                 port: http
               initialDelaySeconds: 15
-              periodSeconds: 30
+              periodSeconds: 60
             {{- end }}
           {{- with .Values.dashboard.resources }}
           resources:

@@ -4,7 +4,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ $fullName }}-management
+  name: {{ $fullName }}-server
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "netbird.labels" . | nindent 4 }}
@@ -18,13 +18,13 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   hostnames:
-    - '{{ .Values.global.domain.management | default .Values.global.domain.global }}'
+    - {{ default .Values.global.domain.global  | quote }}
   rules:
     - backendRefs:
         - group: ''
           kind: Service
-          name: {{ $fullName }}-management
-          port: {{ .Values.global.management.port }}
+          name: {{ $fullName }}-server
+          port: {{ .Values.global.server.port }}
       matches:
         - path:
             type: PathPrefix
@@ -34,7 +34,10 @@ spec:
             value: /oauth2
         - path:
             type: PathPrefix
-            value: /ws-proxy/management
+            value: /ws-proxy
+        - path:
+            type: PathPrefix
+            value: /relay
       timeouts:
         request: 3600s
         backendRequest: 3600s
@@ -58,7 +61,7 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   hostnames:
-    - '{{ .Values.global.domain.global }}'
+    - {{ default .Values.global.domain.global  | quote }}
   rules:
     - backendRefs:
         - group: ''
@@ -76,189 +79,10 @@ spec:
 
 
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: GRPCRoute
-metadata:
-  name: {{ $fullName }}-management
-  namespace: {{ .Values.global.namespace }}
-  labels:
-    {{- include "netbird.labels" . | nindent 4 }}
-  {{- with .Values.global.route.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- with .Values.global.route.parentRefs }}
-  parentRefs:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  hostnames:
-    - '{{ .Values.global.domain.management | default .Values.global.domain.global }}'
-  rules:
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ $fullName }}-management
-          port: {{ .Values.global.management.port }}
-      matches:
-        - method:
-            type: Exact
-            service: management.ManagementService
-
-
-{{ if eq .Values.global.route.vendor "envoy" -}}
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
-metadata:
-  name: {{ $fullName }}-management-timeouts
-  namespace: ecumene
-spec:
-  targetRefs:
-    - group: 'gateway.networking.k8s.io'
-      kind: GRPCRoute
-      name: {{ $fullName }}-management
-  timeout:
-    http:
-      requestTimeout: 0s
-      connectionIdleTimeout: 86400s
-  tcpKeepalive:
-    idleTime: 30s
-    interval: 30s
-    probes: 5
-{{- end }}
-
-
-
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: {{ $fullName }}-signal
-  namespace: {{ .Values.global.namespace }}
-  labels:
-    {{- include "netbird.labels" . | nindent 4 }}
-  {{- with .Values.global.route.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- with .Values.global.route.parentRefs }}
-  parentRefs:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  hostnames:
-    - '{{ .Values.global.domain.signal | default .Values.global.domain.global }}'
-  rules:
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ $fullName }}-signal
-          port: {{ .Values.global.dashboard.port }}
-      matches:
-        - path:
-            type: PathPrefix
-            value: /ws-proxy/signal
-      timeouts:
-        request: 3600s
-        backendRequest: 3600s
-
-
-
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: GRPCRoute
-metadata:
-  name: {{ $fullName }}-signal
-  namespace: {{ .Values.global.namespace }}
-  labels:
-    {{- include "netbird.labels" . | nindent 4 }}
-  {{- with .Values.global.route.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- with .Values.global.route.parentRefs }}
-  parentRefs:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  hostnames:
-    - '{{ .Values.global.domain.signal | default .Values.global.domain.global }}'
-  rules:
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ $fullName }}-signal
-          port: {{ .Values.global.signal.port }}
-      matches:
-        - method:
-            type: Exact
-            service: signalexchange.SignalExchange
-
-
-{{ if eq .Values.global.route.vendor "envoy" -}}
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
-metadata:
-  name: {{ $fullName }}-signal-timeouts
-  namespace: ecumene
-spec:
-  targetRefs:
-    - group: 'gateway.networking.k8s.io'
-      kind: GRPCRoute
-      name: {{ $fullName }}-signal
-  timeout:
-    http:
-      requestTimeout: 0s
-      connectionIdleTimeout: 86400s
-  tcpKeepalive:
-    idleTime: 30s
-    interval: 30s
-    probes: 5
-{{- end }}
-
-
-
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: {{ $fullName }}-relay
-  namespace: {{ .Values.global.namespace }}
-  labels:
-    {{- include "netbird.labels" . | nindent 4 }}
-  {{- with .Values.global.route.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- with .Values.global.route.parentRefs }}
-  parentRefs:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  hostnames:
-    - '{{ .Values.global.domain.relay | default .Values.global.domain.global }}'
-  rules:
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ $fullName }}-relay-tcp
-          port: {{ .Values.global.relay.port }}
-      matches:
-        - path:
-            type: PathPrefix
-            value: /relay
-      timeouts:
-        request: 3600s
-        backendRequest: 3600s
-
-
----
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: UDPRoute
 metadata:
-  name: {{ $fullName }}-coturn
+  name: {{ $fullName }}-stun
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "netbird.labels" . | nindent 4 }}
@@ -267,7 +91,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with .Values.global.route.relayParentRefs }}
+  {{- with .Values.global.route.stunParentRefs }}
   parentRefs:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -277,11 +101,116 @@ spec:
     - backendRefs:
         - group: ''
           kind: Service
-          name: {{ $fullName }}-relay-udp
-          port: {{ .Values.global.relay.port }}
-      timeouts:
-        request: 3600s
-        backendRequest: 3600s
+          name: {{ $fullName }}-server
+          port: {{ .Values.global.server.stun_port }}
+
+
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: {{ $fullName }}-server-management
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "netbird.labels" . | nindent 4 }}
+  {{- with .Values.global.route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.global.route.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  hostnames:
+    - {{ default .Values.global.domain.global  | quote }}
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ $fullName }}-server
+          port: {{ .Values.global.server.port }}
+      matches:
+        - method:
+            type: Exact
+            service: management.ManagementService
+
+
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: {{ $fullName }}-server-signal
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "netbird.labels" . | nindent 4 }}
+  {{- with .Values.global.route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.global.route.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  hostnames:
+    - {{ default .Values.global.domain.global  | quote }}
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ $fullName }}-server
+          port: {{ .Values.global.server.port }}
+      matches:
+        - method:
+            type: Exact
+            service: signalexchange.SignalExchange
+
+
+
+{{ if eq .Values.global.route.vendor "envoy" -}}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ $fullName }}-server-management-timeouts
+  namespace: ecumene
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: GRPCRoute
+      name: {{ $fullName }}-server-management
+  timeout:
+    http:
+      requestTimeout: 0s
+      connectionIdleTimeout: 86400s
+  tcpKeepalive:
+    idleTime: 30s
+    interval: 30s
+    probes: 5
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ $fullName }}-server-signal-timeouts
+  namespace: ecumene
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: GRPCRoute
+      name: {{ $fullName }}-server-signal
+  timeout:
+    http:
+      requestTimeout: 0s
+      connectionIdleTimeout: 86400s
+  tcpKeepalive:
+    idleTime: 30s
+    interval: 30s
+    probes: 5
+{{- end }}
 
 
 

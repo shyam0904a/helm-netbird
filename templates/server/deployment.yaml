@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "netbird.fullname" . }}-server"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "netbird.labels" . | nindent 4 }}
+    netbird-app: {{ include "netbird.fullname" . }}-server
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "netbird.selectorLabels" . | nindent 6 }}
+      netbird-app: {{ include "netbird.fullname" . }}-server
+  template:
+    metadata:
+      {{- with .Values.server.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        netbird-app: {{ include "netbird.fullname" . }}-server
+        {{- include "netbird.labels" . | nindent 8 }}
+        {{- with .Values.server.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: stun
+              containerPort: 3478
+              protocol: UDP
+          args:
+            - '--config'
+            - '{{ .Values.server.persistence.configMountPath }}'
+            {{- range .Values.server.extra_args }}
+            - "{{ . }}"
+            {{- end }}
+          livenessProbe:
+            {{- if .Values.server.livenessProbe }}
+            {{- toYaml .Values.server.livenessProbe | nindent 12 }}
+            {{- else }}
+              tcpSocket:
+                port: {{ .Values.global.server.port }}
+              initialDelaySeconds: 15
+              periodSeconds: 30
+            {{- end }}
+          readinessProbe:
+            {{- if .Values.server.readinessProbe }}
+            {{- toYaml .Values.server.readinessProbe | nindent 12 }}
+            {{- else }}
+              tcpSocket:
+                port: {{ .Values.global.server.port }}
+              initialDelaySeconds: 15
+              periodSeconds: 30
+            {{- end }}
+          {{- with .Values.server.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.global.persistence.volumeName }}
+              subPath: {{ .Values.server.persistence.subPath }}
+              mountPath: {{ .Values.server.persistence.mountPath }}
+            - name: config
+              subPath: config.yaml
+              mountPath: {{ .Values.server.persistence.configMountPath }}
+            {{- with .Values.server.extra_volumeMounts }}
+            {{ toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ include "netbird.fullname" . }}-config
+        - name: {{ .Values.global.persistence.volumeName }}
+          {{- if .Values.global.persistence.enabled }}
+          persistentVolumeClaim:
+                claimName: {{- if .Values.global.persistence.existingClaim }} {{ .Values.global.persistence.existingClaim }}{{- else }} {{ include "netbird.fullname" . }}-{{ .Values.global.persistence.volumeName }}{{- end }}
+          {{- else }}
+          emptyDir:
+            sizeLimit: 1Gi
+          {{- end }}
+        {{- with .Values.server.extra_volumes }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.server.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
