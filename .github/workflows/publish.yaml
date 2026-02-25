@@ -82,7 +82,7 @@ jobs:
           fi
 
           echo "Using chart version: v$version"
-          echo "VERSION=v$version" >> $GITHUB_ENV
+          echo "VERSION=$version" >> $GITHUB_ENV
           echo "PKG_VERSION=$version" >> $GITHUB_ENV
 
       - name: Update Chart.yaml version
@@ -133,6 +133,7 @@ jobs:
           fi
           helm push "${CHART_TGZ}" \
             "oci://${GHCR_REGISTRY}/${GHCR_NAMESPACE}"
+
       - name: Push Helm chart to GHCR (OCI, 0.0.0-latest)
         run: |
           LATEST_TGZ="packages/${CHART_NAME}-0.0.0-latest.tgz"
