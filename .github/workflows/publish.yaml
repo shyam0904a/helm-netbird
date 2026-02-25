@@ -89,13 +89,6 @@ jobs:
         run: |
           yq -i ".version = \"${VERSION}\"" Chart.yaml
 
-      - name: Package ${{ env.CHART_NAME }} chart
-        run: |
-          mkdir -p packages
-          helm package ./ \
-            --version "v${VERSION}" \
-            --destination packages
-
       - name: Login to GHCR
         env:
           GITHUB_TOKEN: ${{ secrets.HELM_CHARTS_PAT }}
@@ -104,6 +97,14 @@ jobs:
             helm registry login "${GHCR_REGISTRY}" \
               --username "${GITHUB_ACTOR}" \
               --password-stdin
+
+
+      - name: Package ${{ env.CHART_NAME }} chart
+        run: |
+          mkdir -p packages
+          helm package ./ \
+            --version "${VERSION}" \
+            --destination packages
 
       - name: Push Helm chart to GHCR (OCI)
         run: |
@@ -116,24 +117,24 @@ jobs:
             "oci://${GHCR_REGISTRY}/${GHCR_NAMESPACE}"
 
 
-      - name: Package ${{ env.CHART_NAME }} chart (v0.0.0-latest)
+
+      - name: Package ${{ env.CHART_NAME }} chart (0.0.0-latest)
         run: |
           # Save current Chart.yaml
           cp Chart.yaml Chart.yaml.bak
 
-          # Set version to v0.0.0-latest
-          yq -i '.version = "v0.0.0-latest"' Chart.yaml
+          yq -i '.version = "0.0.0-latest"' Chart.yaml
 
           # Package chart with the "latest" version
           helm package ./ \
-            --version "v0.0.0-latest" \
+            --version "0.0.0-latest" \
             --destination packages
 
           # Restore original Chart.yaml
           mv Chart.yaml.bak Chart.yaml
-      - name: Push Helm chart to GHCR (OCI, v0.0.0-latest)
+      - name: Push Helm chart to GHCR (OCI, 0.0.0-latest)
         run: |
-          LATEST_TGZ="packages/${CHART_NAME}-v0.0.0-latest.tgz"
+          LATEST_TGZ="packages/${CHART_NAME}-0.0.0-latest.tgz"
           if [ ! -f "${LATEST_TGZ}" ]; then
             echo "Chart package ${LATEST_TGZ} not found"
             exit 1
@@ -143,10 +144,12 @@ jobs:
 
 
 
+
       - name: Copy packaged chart to subfolder (/charts/${{ env.CHART_NAME }})
         run: |
           mkdir -p helm-charts/charts/${CHART_NAME}
           cp packages/${CHART_NAME}-${PKG_VERSION}.tgz helm-charts/charts/${CHART_NAME}/
+
 
       - name: Regenerate index.yaml at root (recursive)
         run: |
@@ -162,6 +165,7 @@ jobs:
               --url "${CHARTS_URL}"
           fi
           cp charts/${CHART_NAME}/index.yaml .
+
 
       - name: Commit & push to main
         run: |
