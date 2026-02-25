@@ -45,9 +45,10 @@ To use the minimal setup, you will require
    #     subPath: 'management'
    ```
 2. Ensure your chosen ports are accessible to the gateway (default 443 TCP/3478 UDP).
-3. Run
-   `helm install netbird oci://ghcr.io/cclloyd/helm-netbird/netbird --version 0.0.0-latest -n netbird -f path/to/values.yaml`
-   (recommend pinning a specific chart version instead of latest)
+3. Run helm install (recommend pinning a specific chart version instead of latest)
+   ```shell
+   helm install netbird oci://ghcr.io/cclloyd/helm-netbird/netbird --version 0.0.0-latest -n netbird -f path/to/values.yaml
+   ```
 4. Once it's done setting itself, up, access it at your external URL. Once you go through the setup, you can enable
    additional auth options.
 
