@@ -1,4 +1,4 @@
-name: Release Helm Chart (OCI to GHCR)
+name: Publish Helm Chart
 
 on:
   push:
@@ -31,7 +31,6 @@ jobs:
 
       - name: Package Helm chart
         run: |
-          # If your chart is in a subfolder, replace "." with that path (e.g. "./charts/netbird")
           helm package . --destination ./packages
 
       - name: Push Helm chart to GHCR (OCI)

@@ -1,4 +1,4 @@
-name: Publish Helm chart helm-charts using main branch
+name: Publish Helm chart to external helm-charts repo
 
 env:
   CHART_NAME: netbird
