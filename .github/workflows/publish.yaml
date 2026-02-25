@@ -89,14 +89,6 @@ jobs:
         run: |
           yq -i ".version = \"${VERSION}\"" Chart.yaml
 
-      - name: Login to GHCR
-        env:
-          GITHUB_TOKEN: ${{ secrets.HELM_CHARTS_PAT }}
-        run: |
-          echo "${GITHUB_TOKEN}" | \
-            helm registry login "${GHCR_REGISTRY}" \
-              --username "${GITHUB_ACTOR}" \
-              --password-stdin
 
 
       - name: Package ${{ env.CHART_NAME }} chart
@@ -105,19 +97,6 @@ jobs:
           helm package ./ \
             --version "${VERSION}" \
             --destination packages
-
-      - name: Push Helm chart to GHCR (OCI)
-        run: |
-          CHART_TGZ="packages/${CHART_NAME}-${PKG_VERSION}.tgz"
-          if [ ! -f "${CHART_TGZ}" ]; then
-            echo "Chart package ${CHART_TGZ} not found"
-            exit 1
-          fi
-          helm push "${CHART_TGZ}" \
-            "oci://${GHCR_REGISTRY}/${GHCR_NAMESPACE}"
-
-
-
       - name: Package ${{ env.CHART_NAME }} chart (0.0.0-latest)
         run: |
           # Save current Chart.yaml
@@ -132,6 +111,28 @@ jobs:
 
           # Restore original Chart.yaml
           mv Chart.yaml.bak Chart.yaml
+
+
+
+
+      - name: Login to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.HELM_CHARTS_PAT }}
+        run: |
+          echo "${GITHUB_TOKEN}" | \
+            helm registry login "${GHCR_REGISTRY}" \
+              --username "${GITHUB_ACTOR}" \
+              --password-stdin
+
+      - name: Push Helm chart to GHCR (OCI)
+        run: |
+          CHART_TGZ="packages/${CHART_NAME}-${PKG_VERSION}.tgz"
+          if [ ! -f "${CHART_TGZ}" ]; then
+            echo "Chart package ${CHART_TGZ} not found"
+            exit 1
+          fi
+          helm push "${CHART_TGZ}" \
+            "oci://${GHCR_REGISTRY}/${GHCR_NAMESPACE}"
       - name: Push Helm chart to GHCR (OCI, 0.0.0-latest)
         run: |
           LATEST_TGZ="packages/${CHART_NAME}-0.0.0-latest.tgz"
@@ -141,7 +142,6 @@ jobs:
           fi
           helm push "${LATEST_TGZ}" \
             "oci://${GHCR_REGISTRY}/${GHCR_NAMESPACE}"
-
 
 
 
