@@ -81,8 +81,8 @@ jobs:
             exit 1
           fi
 
-          echo "Using chart version: $version"
-          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "Using chart version: v$version"
+          echo "VERSION=v$version" >> $GITHUB_ENV
           echo "PKG_VERSION=$version" >> $GITHUB_ENV
 
       - name: Update Chart.yaml version
