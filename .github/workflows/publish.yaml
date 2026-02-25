@@ -98,7 +98,7 @@ jobs:
 
       - name: Login to GHCR
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.HELM_CHARTS_PAT }}
         run: |
           echo "${GITHUB_TOKEN}" | \
             helm registry login "${GHCR_REGISTRY}" \
