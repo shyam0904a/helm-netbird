@@ -15,6 +15,7 @@ global:
     port: 80
     stun_port: 3478
     encryption_key: '' # openssl rand -base64 32
+    authSecret: ''
 
   persistence:
     enabled: true
@@ -100,5 +101,22 @@ server:
     configMountPath: /etc/netbird/config.yaml
     subPath: 'server'
 
+# External STUN server configuration
+# Set enabled: true if you want to use an external STUN server
+# instead of the built-in one
+stuns:
+  enabled: false
+  url: '' # e.g. stun:stun.example.com:3478
 
+# External relay server configuration
+relays:
+  enabled: false
+  address: '' # e.g. rels://relay.example.com:443
+  secret: '' # relay auth secret
+  credentialsTTL: '24h'
+
+# External signal server configuration
+signal:
+  enabled: false
+  signalUri: '' # e.g. https://signal.example.com:443
 
