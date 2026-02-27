@@ -2,9 +2,9 @@ name: Publish Helm chart to external helm-charts repo
 
 env:
   CHART_NAME: netbird
-  HELM_CHARTS_REPO: https://github.com/cclloyd/helm-charts.git
+  HELM_CHARTS_REPO: https://github.com/shyam0904a/helm-charts.git
   GHCR_REGISTRY: ghcr.io
-  GHCR_NAMESPACE: cclloyd/helm-netbird
+  GHCR_NAMESPACE: shyam0904a/helm-netbird
 
 on:
   push:
