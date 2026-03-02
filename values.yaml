@@ -80,6 +80,7 @@ server:
     repository: netbirdio/netbird-server
     tag: 0.66.0
     pullPolicy: IfNotPresent
+  localAuthDisabled: true
   annotations: {}
   labels: {}
   nodeSelector: {}
